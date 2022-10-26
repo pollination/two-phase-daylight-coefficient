@@ -3,7 +3,7 @@ from pollination_dsl.dag.inputs import ItemType
 from dataclasses import dataclass
 from pollination.honeybee_radiance_postprocess.grid import MergeFolderData
 
-from ._raytracing import AnnualDaylightRayTracing
+from ._raytracing import TwoPhaseRayTracing
 
 
 @dataclass
@@ -90,7 +90,7 @@ class TwoPhaseSimulation(DAG):
     )
 
     @task(
-        template=AnnualDaylightRayTracing,
+        template=TwoPhaseRayTracing,
         loop=sensor_grids_info,
         # create a subfolder for each grid
         sub_folder='initial_results/{{item.full_id}}',
