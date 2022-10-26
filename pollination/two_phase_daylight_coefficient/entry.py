@@ -11,7 +11,7 @@ from pollination.alias.inputs.grid import grid_filter_input, \
     min_sensor_count_input, cpu_count
 
 from ._prepare_folder import TwoPhasePrepareFolder
-from .two_phase.entry import TwoPhase
+from .two_phase.entry import TwoPhaseSimulation
 
 
 @dataclass
@@ -120,7 +120,7 @@ class TwoPhaseDaylightCoefficientEntryPoint(DAG):
         ]
 
     @task(
-        template=TwoPhase,
+        template=TwoPhaseSimulation,
         loop=prepare_multiphase._outputs.two_phase_info,
         needs=[prepare_folder_annual_daylight, prepare_multiphase],
         sub_folder='calcs/2_phase/{{item.identifier}}',
