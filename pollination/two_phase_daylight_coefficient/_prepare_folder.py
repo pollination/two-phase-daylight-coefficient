@@ -12,8 +12,8 @@ from pollination.alias.inputs.grid import grid_filter_input
 
 
 @dataclass
-class AnnualDaylightPrepareFolder(GroupedDAG):
-    """Prepare folder for annual daylight."""
+class TwoPhasePrepareFolder(GroupedDAG):
+    """Prepare folder for two phase daylight coefficient."""
 
     # inputs
     north = Inputs.float(
