@@ -120,3 +120,7 @@ class TwoPhasePrepareFolder(GroupedDAG):
     resources = Outputs.folder(
         source='resources', description='resources folder.'
     )
+
+    results = Outputs.folder(
+        source='results', description='results folder.'
+    )
