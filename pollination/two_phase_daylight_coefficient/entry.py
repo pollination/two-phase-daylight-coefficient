@@ -86,6 +86,10 @@ class TwoPhaseDaylightCoefficientEntryPoint(DAG):
             {
                 'from': TwoPhasePrepareFolder()._outputs.resources,
                 'to': 'resources'
+            },
+            {
+                'from': TwoPhasePrepareFolder()._outputs.results,
+                'to': 'results'
             }
         ]
 
