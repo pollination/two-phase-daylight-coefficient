@@ -60,7 +60,7 @@ class TwoPhasePrepareFolder(GroupedDAG):
             }
         ]
 
-    @task(template=CreateRadianceFolderGrid)
+    @task(template=CreateRadianceFolderGrid, annotations={'main_task': True})
     def create_rad_folder(self, input_model=model, grid_filter=grid_filter):
         """Translate the input model to a radiance folder."""
         return [
