@@ -3,14 +3,12 @@ from pollination_dsl.dag import Inputs, DAG, task, Outputs
 from pollination.honeybee_radiance.sun import CreateSunMatrix, ParseSunUpHours
 from pollination.honeybee_radiance.translate import CreateRadianceFolderGrid
 from pollination.honeybee_radiance.sky import CreateSkyDome, CreateSkyMatrix
-from pollination.honeybee_radiance.multiphase import PrepareMultiphase
 
 # input/output alias
 from pollination.alias.inputs.model import hbjson_model_grid_input
 from pollination.alias.inputs.wea import wea_input_timestep_check
 from pollination.alias.inputs.north import north_input
-from pollination.alias.inputs.grid import grid_filter_input, \
-    min_sensor_count_input, cpu_count
+from pollination.alias.inputs.grid import grid_filter_input
 
 
 @dataclass
@@ -23,25 +21,6 @@ class TwoPhasePrepareFolder(DAG):
         description='A number for rotation from north.',
         spec={'type': 'number', 'minimum': 0, 'maximum': 360},
         alias=north_input
-    )
-
-    cpu_count = Inputs.int(
-        description='The number of processors to be used as a result of the '
-        'grid-splitting operation. This value is equivalent to the number of '
-        'sensor grids that will be generated when the cpus-per-grid is left as 1.',
-        spec={'type': 'integer', 'minimum': 1},
-        alias=cpu_count
-    )
-
-    min_sensor_count = Inputs.int(
-        description='The minimum number of sensors in each sensor grid after '
-        'redistributing the sensors based on cpu_count. This value takes '
-        'precedence over the cpu_count and can be used to ensure that '
-        'the parallelization does not result in generating unnecessarily small '
-        'sensor grids. The default value is set to 1, which means that the '
-        'cpu_count is always respected.', default=500,
-        spec={'type': 'integer', 'minimum': 1},
-        alias=min_sensor_count_input
     )
 
     grid_filter = Inputs.str(
@@ -81,7 +60,7 @@ class TwoPhasePrepareFolder(DAG):
             }
         ]
 
-    @task(template=CreateRadianceFolderGrid, annotations={'main_task': True})
+    @task(template=CreateRadianceFolderGrid)
     def create_rad_folder(self, input_model=model, grid_filter=grid_filter):
         """Translate the input model to a radiance folder."""
         return [
@@ -133,36 +112,6 @@ class TwoPhasePrepareFolder(DAG):
                 'to': 'results/sun-up-hours.txt'
             }
         ]
-
-    @task(
-        template=PrepareMultiphase,
-        needs=[create_rad_folder, generate_sunpath]
-    )
-    def prepare_multiphase(
-        self, model=create_rad_folder._outputs.model_folder,
-        sunpath=generate_sunpath._outputs.sunpath, phase=2,
-        cpu_count=cpu_count, cpus_per_grid=3,
-        min_sensor_count=min_sensor_count, static='include'
-    ):
-        return [
-            {
-                'from': PrepareMultiphase()._outputs.scene_folder,
-                'to': 'resources/dynamic/octree'
-            },
-            {
-                'from': PrepareMultiphase()._outputs.grid_folder,
-                'to': 'resources/dynamic/grid'
-            },
-            {
-                'from': PrepareMultiphase()._outputs.two_phase_info,
-                'to': 'resources/two_phase.json'
-            },
-            {   'from': PrepareMultiphase()._outputs.grid_states_file,
-                'to': 'results/grid_states.json'
-            }
-        ]
-
-    two_phase_info = Outputs.list(source='resources/two_phase.json')
 
     model_folder = Outputs.folder(
         source='model', description='input model folder folder.'
