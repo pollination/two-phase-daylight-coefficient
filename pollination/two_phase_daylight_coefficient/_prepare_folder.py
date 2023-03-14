@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from pollination_dsl.dag import Inputs, GroupedDAG, task, Outputs
+from pollination_dsl.dag import Inputs, DAG, task, Outputs
 from pollination.honeybee_radiance.sun import CreateSunMatrix, ParseSunUpHours
 from pollination.honeybee_radiance.translate import CreateRadianceFolderGrid
 from pollination.honeybee_radiance.sky import CreateSkyDome, CreateSkyMatrix
@@ -14,7 +14,7 @@ from pollination.alias.inputs.grid import grid_filter_input, \
 
 
 @dataclass
-class TwoPhasePrepareFolder(GroupedDAG):
+class TwoPhasePrepareFolder(DAG):
     """Prepare folder for two phase daylight coefficient."""
 
     # inputs
