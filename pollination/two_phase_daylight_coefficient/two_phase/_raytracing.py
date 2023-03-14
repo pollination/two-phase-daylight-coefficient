@@ -1,5 +1,4 @@
 """Ray tracing DAG for annual daylight."""
-
 from pollination_dsl.dag import Inputs, DAG, task
 from dataclasses import dataclass
 
