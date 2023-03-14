@@ -116,7 +116,7 @@ class TwoPhaseDaylightCoefficientEntryPoint(DAG):
                 'to': 'resources/dynamic/grid'
             },
             {
-                'from': PrepareMultiphase()._outputs.two_phase_info
+                'from': PrepareMultiphase()._outputs.two_phase_info_list
             },
             {   'from': PrepareMultiphase()._outputs.grid_states_file,
                 'to': 'results/grid_states.json'
@@ -125,7 +125,7 @@ class TwoPhaseDaylightCoefficientEntryPoint(DAG):
 
     @task(
         template=TwoPhaseSimulation,
-        loop=prepare_multiphase._outputs.two_phase_info,
+        loop=prepare_multiphase._outputs.two_phase_info_list,
         needs=[prepare_folder_annual_daylight, prepare_multiphase],
         sub_folder='calcs/2_phase/{{item.identifier}}',
         sub_paths={
