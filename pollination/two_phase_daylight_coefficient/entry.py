@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from pollination_dsl.dag import Inputs, DAG, task, Outputs
-from pollination.honeybee_radiance.multiphase import PrepareMultiphase
 
 # input/output alias
 from pollination.alias.inputs.model import hbjson_model_grid_input
@@ -76,7 +75,8 @@ class TwoPhaseDaylightCoefficientEntryPoint(DAG):
 
     @task(template=TwoPhasePrepareFolder)
     def prepare_folder_annual_daylight(
-        self, north=north, grid_filter=grid_filter, model=model, wea=wea
+        self, north=north, cpu_count=cpu_count, min_sensor_count=min_sensor_count,
+        grid_filter=grid_filter, model=model, wea=wea
         ):
         return [
             {
@@ -90,49 +90,22 @@ class TwoPhaseDaylightCoefficientEntryPoint(DAG):
             {
                 'from': TwoPhasePrepareFolder()._outputs.results,
                 'to': 'results'
-            }
-        ]
-
-    @task(
-        template=PrepareMultiphase,
-        needs=[prepare_folder_annual_daylight],
-        sub_paths={
-            'sunpath': 'sunpath.mtx'
-        }
-    )
-    def prepare_multiphase(
-        self, model=prepare_folder_annual_daylight._outputs.model_folder,
-        sunpath=prepare_folder_annual_daylight._outputs.resources, phase=2,
-        cpu_count=cpu_count, cpus_per_grid=3,
-        min_sensor_count=min_sensor_count, static='include'
-    ):
-        return [
-            {
-                'from': PrepareMultiphase()._outputs.scene_folder,
-                'to': 'resources/dynamic/octree'
             },
             {
-                'from': PrepareMultiphase()._outputs.grid_folder,
-                'to': 'resources/dynamic/grid'
-            },
-            {
-                'from': PrepareMultiphase()._outputs.two_phase_info_list
-            },
-            {   'from': PrepareMultiphase()._outputs.grid_states_file,
-                'to': 'results/grid_states.json'
+                'from': TwoPhasePrepareFolder()._outputs.two_phase_info
             }
         ]
 
     @task(
         template=TwoPhaseSimulation,
-        loop=prepare_multiphase._outputs.two_phase_info_list,
-        needs=[prepare_folder_annual_daylight, prepare_multiphase],
+        loop=prepare_folder_annual_daylight._outputs.two_phase_info,
+        needs=[prepare_folder_annual_daylight],
         sub_folder='calcs/2_phase/{{item.identifier}}',
         sub_paths={
-            'octree_file': '{{item.octree}}',
-            'octree_file_direct': '{{item.octree_direct}}',
-            'octree_file_with_suns': '{{item.octree_direct_sun}}',
-            'sensor_grids_folder': '{{item.sensor_grids_folder}}',
+            'octree_file': 'dynamic/octree/{{item.octree}}',
+            'octree_file_direct': 'dynamic/octree/{{item.octree_direct}}',
+            'octree_file_with_suns': 'dynamic/octree/{{item.octree_direct_sun}}',
+            'sensor_grids_folder': 'dynamic/grid/{{item.sensor_grids_folder}}',
             'sky_dome': 'sky.dome',
             'total_sky': 'sky.mtx',
             'direct_sky': 'sky_direct.mtx',
@@ -146,10 +119,10 @@ class TwoPhaseDaylightCoefficientEntryPoint(DAG):
         light_path='{{item.light_path}}',
         radiance_parameters=radiance_parameters,
         sensor_grids_info='{{item.sensor_grids_info}}',
-        sensor_grids_folder=prepare_multiphase._outputs.grid_folder,
-        octree_file=prepare_multiphase._outputs.scene_folder,
-        octree_file_direct=prepare_multiphase._outputs.scene_folder,
-        octree_file_with_suns=prepare_multiphase._outputs.scene_folder,
+        sensor_grids_folder=prepare_folder_annual_daylight._outputs.resources,
+        octree_file=prepare_folder_annual_daylight._outputs.resources,
+        octree_file_direct=prepare_folder_annual_daylight._outputs.resources,
+        octree_file_with_suns=prepare_folder_annual_daylight._outputs.resources,
         sky_dome=prepare_folder_annual_daylight._outputs.resources,
         total_sky=prepare_folder_annual_daylight._outputs.resources,
         direct_sky=prepare_folder_annual_daylight._outputs.resources,
