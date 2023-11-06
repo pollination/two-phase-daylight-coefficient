@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from pollination.honeybee_radiance.contrib import DaylightContribution
 from pollination.honeybee_radiance.coefficient import DaylightCoefficient
-from pollination.honeybee_radiance_postprocess.two_phase import ProcessTwoPhase
+from pollination.honeybee_radiance_postprocess.two_phase import AddRemoveSkyMatrix
 
 @dataclass
 class TwoPhaseRayTracing(DAG):
@@ -80,6 +80,8 @@ class TwoPhaseRayTracing(DAG):
         modifiers=sun_modifiers,
         sensor_grid=sensor_grid,
         scene_file=octree_file_with_suns,
+        conversion='47.4 119.9 11.6',
+        output_format='f',
         bsdf_folder=bsdfs
     ):
         return [
@@ -95,9 +97,11 @@ class TwoPhaseRayTracing(DAG):
         radiance_parameters=radiance_parameters,
         fixed_radiance_parameters='-aa 0.0 -I -ab 1 -c 1 -faf',
         sensor_count=sensor_count,
-        sky_matrix=sky_matrix_direct, sky_dome=sky_dome,
+        sky_matrix=sky_matrix_direct,
+        sky_dome=sky_dome,
         sensor_grid=sensor_grid,
         scene_file=octree_file_direct,
+        conversion='47.4 119.9 11.6',
         bsdf_folder=bsdfs
     ):
         return [
@@ -113,9 +117,11 @@ class TwoPhaseRayTracing(DAG):
         radiance_parameters=radiance_parameters,
         fixed_radiance_parameters='-aa 0.0 -I -c 1 -faf',
         sensor_count=sensor_count,
-        sky_matrix=sky_matrix, sky_dome=sky_dome,
+        sky_matrix=sky_matrix,
+        sky_dome=sky_dome,
         sensor_grid=sensor_grid,
         scene_file=octree_file,
+        conversion='47.4 119.9 11.6',
         bsdf_folder=bsdfs
     ):
         return [
@@ -126,7 +132,7 @@ class TwoPhaseRayTracing(DAG):
         ]
 
     @task(
-        template=ProcessTwoPhase,
+        template=AddRemoveSkyMatrix,
         needs=[direct_sunlight, total_sky, direct_sky]
     )
     def output_matrix_math(
@@ -138,11 +144,11 @@ class TwoPhaseRayTracing(DAG):
     ):
         return [
             {
-                'from': ProcessTwoPhase()._outputs.total,
+                'from': AddRemoveSkyMatrix()._outputs.total,
                 'to': '../final/total/{{self.name}}.ill'
             },
             {
-                'from': ProcessTwoPhase()._outputs.direct,
+                'from': AddRemoveSkyMatrix()._outputs.direct,
                 'to': '../final/direct/{{self.name}}.ill'
             }
         ]
