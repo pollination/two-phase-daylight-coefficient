@@ -4,10 +4,11 @@ from pollination.honeybee_radiance.sun import CreateSunMtx, ParseSunUpHours
 from pollination.honeybee_radiance.translate import CreateRadianceFolderGrid
 from pollination.honeybee_radiance.sky import CreateSkyDome, CreateSkyMatrix
 from pollination.honeybee_radiance.multiphase import PrepareMultiphase
+from pollination.honeybee_radiance.study import StudyInfo
 
 # input/output alias
 from pollination.alias.inputs.model import hbjson_model_grid_input
-from pollination.alias.inputs.wea import wea_input_timestep_check
+from pollination.alias.inputs.wea import wea_input
 from pollination.alias.inputs.north import north_input
 from pollination.alias.inputs.grid import grid_filter_input, \
     min_sensor_count_input, cpu_count
@@ -64,7 +65,13 @@ class TwoPhasePrepareFolder(GroupedDAG):
     wea = Inputs.file(
         description='Wea file.',
         extensions=['wea', 'epw'],
-        alias=wea_input_timestep_check
+        alias=wea_input
+    )
+
+    timestep = Inputs.int(
+        description='Input wea timestep. This value will be used to compute '
+        'cumulative radiation results.', default=1,
+        spec={'type': 'integer', 'minimum': 1, 'maximum': 60}
     )
 
     @task(template=CreateSunMtx)
@@ -131,6 +138,15 @@ class TwoPhasePrepareFolder(GroupedDAG):
             {
                 'from': ParseSunUpHours()._outputs.sun_up_hours,
                 'to': 'results/sun-up-hours.txt'
+            }
+        ]
+
+    @task(template=StudyInfo)
+    def create_study_info(self, wea=wea, timestep=timestep):
+        return [
+            {
+                'from': StudyInfo()._outputs.study_info,
+                'to': 'results/study_info.json'
             }
         ]
 
