@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from pollination.honeybee_radiance.contrib import DaylightContribution
 from pollination.honeybee_radiance.coefficient import DaylightCoefficient
-from pollination.honeybee_radiance_postprocess.two_phase import AddRemoveSkyMatrix
+from pollination.honeybee_radiance_postprocess.two_phase import TwoPhaseAddRemoveSkyMatrix
 
 @dataclass
 class TwoPhaseRayTracing(DAG):
@@ -132,7 +132,7 @@ class TwoPhaseRayTracing(DAG):
         ]
 
     @task(
-        template=AddRemoveSkyMatrix,
+        template=TwoPhaseAddRemoveSkyMatrix,
         needs=[direct_sunlight, total_sky, direct_sky]
     )
     def output_matrix_math(
@@ -144,11 +144,11 @@ class TwoPhaseRayTracing(DAG):
     ):
         return [
             {
-                'from': AddRemoveSkyMatrix()._outputs.total,
+                'from': TwoPhaseAddRemoveSkyMatrix()._outputs.total,
                 'to': '../final/total/{{self.name}}.ill'
             },
             {
-                'from': AddRemoveSkyMatrix()._outputs.direct,
+                'from': TwoPhaseAddRemoveSkyMatrix()._outputs.direct,
                 'to': '../final/direct/{{self.name}}.ill'
             }
         ]
