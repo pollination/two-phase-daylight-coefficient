@@ -58,6 +58,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           QB_POLLINATION_TOKEN: ${{ secrets.POLLINATION_STAGING_LADYBUGBOT_TOKEN }}
+      - name: run on staging
+        run: python samples/run_job.py
+        env:
+          QB_POLLINATION_TOKEN: ${{ secrets.POLLINATION_STAGING_LADYBUGBOT_TOKEN }}
+          RECIPE_TAG: ${{needs.deploy.outputs.tag}}
+          HOST: https://api.staging.pollination.cloud
 
   deploy-to-production:
     name: Deploy to Pollination Production
