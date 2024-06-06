@@ -9,7 +9,7 @@ from pollination_io.interactors import Recipe, NewJob
 
 
 api_key = os.environ['QB_POLLINATION_TOKEN']
-recipe_tag = os.environ['RECIPE_TAG']
+recipe_tag = os.environ['TAG']
 host = os.environ['HOST']
 
 owner = 'ladybug-tools'

@@ -64,7 +64,7 @@ jobs:
         run: python samples/run_jobs.py
         env:
           QB_POLLINATION_TOKEN: ${{ secrets.POLLINATION_STAGING_LADYBUGBOT_TOKEN }}
-          RECIPE_TAG: ${{needs.deploy.outputs.tag}}
+          TAG: $(echo "${{ needs.deploy.outputs.tag }}" | sed 's/[[:space:]]//g')
           HOST: https://api.staging.pollination.cloud
 
   deploy-to-production:
