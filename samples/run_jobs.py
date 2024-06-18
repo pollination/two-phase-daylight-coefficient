@@ -35,22 +35,30 @@ datetime_now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 name = f'Samples (Scheduled by GitHub workflow: {datetime_now})'
 new_study = NewJob(owner, project, recipe, name=name, client=api_client)
 
+# get all unique artifacts
+artifacts = set()
+for sample_run in sample_runs:
+    for value in sample_run.values():
+        input_path = Path(__file__).parent.resolve().joinpath(value)
+        if input_path.exists():
+            artifacts.add(value)
+
+# upload unique artifacts
+artifacts_path = {}
+for artifact in artifacts:
+    input_path = Path(__file__).parent.resolve().joinpath(artifact)
+    artifact_path = new_study.upload_artifact(input_path)
+    artifacts_path[artifact] = artifact_path
+
 # get recipe inputs for each run and upload artifact
 study_inputs = []
-artifacts_paths = {}
 for sample_run in sample_runs:
     inputs = {}
     for recipe_input, value in sample_run.items():
         input_path = Path(__file__).parent.resolve().joinpath(value)
         if input_path.exists():
-            if artifacts_paths.get(input_path, None) is None:
-                # artifact not uploaded yet
-                artifact_path = new_study.upload_artifact(input_path)
-                inputs[recipe_input] = artifact_path
-                artifacts_paths[input_path] = artifact_path
-            else:
-                # artifact already uploaded, reuse artifact path
-                inputs[recipe_input] = artifacts_paths[input_path]
+            # file input, use artifact path
+            inputs[recipe_input] = artifacts_path[value]
         else:
             # not a file recipe input
             inputs[recipe_input] = value
@@ -61,6 +69,12 @@ new_study.arguments = study_inputs
 
 # create the study
 running_study = new_study.create()
+if host == 'https://api.staging.pollination.cloud':
+    pollination_url = 'https://app.staging.pollination.cloud'
+else:
+    pollination_url = 'https://app.pollination.cloud'
+job_url = f'{pollination_url}/{running_study.owner}/projects/{running_study.project}/jobs/{running_study.id}'
+print(job_url)
 
 # wait for 5 seconds
 time.sleep(5)
