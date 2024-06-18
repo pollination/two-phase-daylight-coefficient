@@ -1,10 +1,16 @@
 [
     {
-        "model": "artifacts/sample_model_grid.hbjson",
-        "wea": "artifacts/Boston-Logan Intl AP_0_8759.wea"
+        "artifacts": {
+            "model": "artifacts/sample_model_grid.hbjson",
+            "wea": "artifacts/Boston-Logan Intl AP_0_8759.wea"
+        },
+        "inputs": {}
     },
     {
-        "model": "artifacts/sample_model_grid_aperture_groups.hbjson",
-        "wea": "artifacts/Boston-Logan Intl AP_0_8759.wea"
+        "artifacts": {
+            "model": "artifacts/sample_model_grid_aperture_groups.hbjson",
+            "wea": "artifacts/Boston-Logan Intl AP_0_8759.wea"
+        },
+        "inputs": {}
     }
 ]

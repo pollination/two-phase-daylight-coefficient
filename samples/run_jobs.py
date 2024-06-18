@@ -31,17 +31,17 @@ with open(samples_path, encoding='utf-8') as samples_json:
     sample_runs = json.load(samples_json)
 
 # create a new job
-datetime_now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+datetime_now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 name = f'Samples (Scheduled by GitHub workflow: {datetime_now})'
 new_study = NewJob(owner, project, recipe, name=name, client=api_client)
 
 # get all unique artifacts
 artifacts = set()
 for sample_run in sample_runs:
-    for value in sample_run.values():
+    for recipe_input, value in sample_run['artifacts'].items():
         input_path = Path(__file__).parent.resolve().joinpath(value)
-        if input_path.exists():
-            artifacts.add(value)
+        assert input_path.exists(), f'{input_path} does not exist.'
+        artifacts.add(value)
 
 # upload unique artifacts
 artifacts_path = {}
@@ -53,15 +53,9 @@ for artifact in artifacts:
 # get recipe inputs for each run and upload artifact
 study_inputs = []
 for sample_run in sample_runs:
-    inputs = {}
-    for recipe_input, value in sample_run.items():
-        input_path = Path(__file__).parent.resolve().joinpath(value)
-        if input_path.exists():
-            # file input, use artifact path
-            inputs[recipe_input] = artifacts_path[value]
-        else:
-            # not a file recipe input
-            inputs[recipe_input] = value
+    inputs = dict(sample_run['inputs'])
+    for recipe_input, value in sample_run['artifacts'].items():
+        inputs[recipe_input] = artifacts_path[value]
     study_inputs.append(inputs)
 
 # add the inputs to the study
