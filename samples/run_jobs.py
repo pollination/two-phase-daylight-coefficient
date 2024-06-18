@@ -1,13 +1,18 @@
-"""Run sample project on Pollination."""
+"""Run sample runs on Pollination."""
 from pathlib import Path
-import os
 import json
 import datetime
+import time
+import sys
+import os
+from requests.exceptions import HTTPError
 
 from pollination_io.api.client import ApiClient
-from pollination_io.interactors import Recipe, NewJob
+from pollination_io.interactors import NewJob, Recipe
+from queenbee.job.job import JobStatusEnum
 
 
+# get environment variables
 api_key = os.environ['QB_POLLINATION_TOKEN']
 recipe_tag = os.environ['TAG']
 host = os.environ['HOST']
@@ -20,32 +25,83 @@ api_client = ApiClient(host, api_key)
 recipe = Recipe(owner, recipe_name, recipe_tag, client=api_client)
 recipe.add_to_project(f'{owner}/{project}')
 
-samples_path = Path(__file__).parent.resolve().joinpath('samples.json')
-with open(samples_path) as samples_json:
-    samples = json.load(samples_json)
+# load recipe inputs for each sample run
+samples_path = Path(__file__).parent.resolve().joinpath('sample_runs.json')
+with open(samples_path, encoding='utf-8') as samples_json:
+    sample_runs = json.load(samples_json)
 
-for idx, sample in enumerate(samples):
-    job_name = sample.get('name', f'Sample {idx}')
-    datetime_now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    auto_name = f'(Scheduled by GitHub workflow: {datetime_now})'
-    job_name = ' '.join([job_name, auto_name])
-    description = sample.get('description', None)
-    job = NewJob(
-        owner, project, recipe, name=job_name, description=description,
-        client=api_client
-    )
+# create a new job
+datetime_now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+name = f'Samples (Scheduled by GitHub workflow: {datetime_now})'
+new_study = NewJob(owner, project, recipe, name=name, client=api_client)
 
+# get recipe inputs for each run and upload artifact
+study_inputs = []
+artifacts_paths = {}
+for sample_run in sample_runs:
     inputs = {}
-    for recipe_input, value in sample['inputs'].items():
+    for recipe_input, value in sample_run.items():
         input_path = Path(__file__).parent.resolve().joinpath(value)
         if input_path.exists():
-            artifact_path = job.upload_artifact(input_path, f'sample_{idx}')
-            inputs[recipe_input] = artifact_path
+            if artifacts_paths.get(input_path, None) is None:
+                # artifact not uploaded yet
+                artifact_path = new_study.upload_artifact(input_path)
+                inputs[recipe_input] = artifact_path
+                artifacts_paths[input_path] = artifact_path
+            else:
+                # artifact already uploaded, reuse artifact path
+                inputs[recipe_input] = artifacts_paths[input_path]
         else:
+            # not a file recipe input
             inputs[recipe_input] = value
+    study_inputs.append(inputs)
 
-    arguments = []
-    arguments.append(inputs)
-    job.arguments = arguments
+# add the inputs to the study
+new_study.arguments = study_inputs
 
-    job.create()
+# create the study
+running_study = new_study.create()
+
+# wait for 5 seconds
+time.sleep(5)
+
+# check status of study
+status = running_study.status.status
+http_errors = 0
+while True:
+    status_info = running_study.status
+    print('\t# ------------------ #')
+    print(f'\t# pending runs: {status_info.runs_pending}')
+    print(f'\t# running runs: {status_info.runs_running}')
+    print(f'\t# failed runs: {status_info.runs_failed}')
+    print(f'\t# completed runs: {status_info.runs_completed}')
+    if status in [
+        JobStatusEnum.pre_processing, JobStatusEnum.running, JobStatusEnum.created,
+        JobStatusEnum.unknown
+    ]:
+        time.sleep(15)
+        try:
+            running_study.refresh()
+        except HTTPError as e:
+            status_code = e.response.status_code
+            print(str(e))
+            if status_code == 500:
+                http_errors += 1
+                if http_errors > 3:
+                    # failed for than 3 times with no success
+                    raise HTTPError(e)
+                # wait for additional 10 seconds
+                time.sleep(10)
+        else:
+            http_errors = 0
+            status = status_info.status
+    else:
+        # study is finished
+        time.sleep(2)
+        break
+
+# return exit status
+if status_info.runs_failed != 0:
+    sys.exit(1)
+else:
+    sys.exit(0)
