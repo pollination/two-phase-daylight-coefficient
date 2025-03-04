@@ -7,7 +7,7 @@ from pollination.alias.inputs.wea import wea_input
 from pollination.alias.inputs.north import north_input
 from pollination.alias.inputs.radiancepar import rad_par_annual_input
 from pollination.alias.inputs.grid import grid_filter_input, \
-    min_sensor_count_input, cpu_count
+    cpu_count
 
 from ._prepare_folder import TwoPhasePrepareFolder
 from .two_phase.entry import TwoPhaseSimulation
@@ -40,10 +40,9 @@ class TwoPhaseDaylightCoefficientEntryPoint(DAG):
         'redistributing the sensors based on cpu_count. This value takes '
         'precedence over the cpu_count and can be used to ensure that '
         'the parallelization does not result in generating unnecessarily small '
-        'sensor grids. The default value is set to 1, which means that the '
-        'cpu_count is always respected.', default=500,
-        spec={'type': 'integer', 'minimum': 1},
-        alias=min_sensor_count_input
+        'sensor grids. The default value is set to 500 for local runs.',
+        default=1000, default_local=500,
+        spec={'type': 'integer', 'minimum': 1}
     )
 
     radiance_parameters = Inputs.str(
