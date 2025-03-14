@@ -100,7 +100,11 @@ class TwoPhasePrepareFolder(GroupedDAG):
             {
                 'from': CreateRadianceFolderGrid()._outputs.sensor_grids_file,
                 'to': 'results/grids_info.json'
-            }
+            },
+            {
+                'from': CreateRadianceFolderGrid()._outputs.output_model,
+                'to': 'output_model.hbjson'
+            },
         ]
 
     @task(template=CreateSkyDome)
@@ -183,6 +187,10 @@ class TwoPhasePrepareFolder(GroupedDAG):
 
     model_folder = Outputs.folder(
         source='model', description='input model folder folder.'
+    )
+
+    output_model = Outputs.file(
+        source='output_model.hbjson', description='output model.', optional=True
     )
 
     resources = Outputs.folder(
