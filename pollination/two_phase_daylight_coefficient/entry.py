@@ -90,6 +90,10 @@ class TwoPhaseDaylightCoefficientEntryPoint(DAG):
                 'to': 'model'
             },
             {
+                'from': TwoPhasePrepareFolder()._outputs.output_model,
+                'to': 'output_model.hbjson'
+            },
+            {
                 'from': TwoPhasePrepareFolder()._outputs.resources,
                 'to': 'resources'
             },
@@ -141,4 +145,8 @@ class TwoPhaseDaylightCoefficientEntryPoint(DAG):
     results = Outputs.folder(
         source='results', description='Folder with raw result files (.ill) that '
         'contain illuminance matrices for each sensor at each timestep of the analysis.'
+    )
+
+    output_model = Outputs.file(
+        source='output_model.hbjson', description='Output model.', optional=True
     )
