@@ -89,6 +89,13 @@ class TwoPhaseSimulation(DAG):
         'then the subfolder for this DAG', default='results'
     )
 
+    dtype = Inputs.str(
+        description='Switch between float32 and float 16 data type. Default '
+        'is float32.',
+        spec={'type': 'string', 'enum': ['float32', 'float16']},
+        default='float32'
+    )
+
     @task(
         template=TwoPhaseRayTracing,
         loop=sensor_grids_info,
@@ -110,7 +117,8 @@ class TwoPhaseSimulation(DAG):
         sky_matrix_direct=direct_sky,
         sky_dome=sky_dome,
         sun_modifiers=sun_modifiers,
-        bsdfs=bsdf_folder
+        bsdfs=bsdf_folder,
+        dtype=dtype
     ):
         pass
 

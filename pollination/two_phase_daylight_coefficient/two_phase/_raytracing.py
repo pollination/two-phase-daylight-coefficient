@@ -71,6 +71,13 @@ class TwoPhaseRayTracing(DAG):
         optional=True
     )
 
+    dtype = Inputs.str(
+        description='Switch between float32 and float 16 data type. Default '
+        'is float32.',
+        spec={'type': 'string', 'enum': ['float32', 'float16']},
+        default='float32'
+    )
+
     @task(template=DaylightContribution)
     def direct_sunlight(
         self,
@@ -140,7 +147,8 @@ class TwoPhaseRayTracing(DAG):
         name=grid_name,
         direct_sky_matrix=direct_sky._outputs.result_file,
         total_sky_matrix=total_sky._outputs.result_file,
-        sunlight_matrix=direct_sunlight._outputs.result_file
+        sunlight_matrix=direct_sunlight._outputs.result_file,
+        dtype=dtype
     ):
         return [
             {

@@ -79,6 +79,13 @@ class TwoPhaseDaylightCoefficientEntryPoint(DAG):
         spec={'type': 'integer', 'minimum': 1, 'maximum': 60}
     )
 
+    dtype = Inputs.str(
+        description='Switch between float32 and float 16 data type. Default '
+        'is float32.',
+        spec={'type': 'string', 'enum': ['float32', 'float16']},
+        default='float32'
+    )
+
     @task(template=TwoPhasePrepareFolder)
     def prepare_folder_annual_daylight(
         self, north=north, cpu_count=cpu_count, min_sensor_count=min_sensor_count,
@@ -138,7 +145,8 @@ class TwoPhaseDaylightCoefficientEntryPoint(DAG):
         direct_sky=prepare_folder_annual_daylight._outputs.resources,
         sun_modifiers=prepare_folder_annual_daylight._outputs.resources,
         bsdf_folder=prepare_folder_annual_daylight._outputs.model_folder,
-        results_folder='../../../results'
+        results_folder='../../../results',
+        dtype=dtype
     ):
         pass
 
